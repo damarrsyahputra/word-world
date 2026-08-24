@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import UploadBox from './components/UploadBox';
 import PromptBox from './components/PromptBox';
 
 function App() {
@@ -8,6 +7,12 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [processedBlob, setProcessedBlob] = useState<Blob | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Auto-hide toast after 7 seconds
   useEffect(() => {
@@ -117,50 +122,26 @@ function App() {
       </div>
 
       {/* Main Container */}
-      <div className="relative z-10 max-w-2xl w-full flex flex-col gap-4 sm:gap-5 transition-all duration-500 mt-4 mb-auto sm:my-auto py-2 sm:py-4">
+      <div className="relative z-10 max-w-2xl w-full flex flex-col transition-all duration-500 my-auto py-4">
         
-        {/* Header Title */}
-        <div className="text-center mb-2 sm:mb-4 flex flex-col items-center">
+        {/* Header (Logo & Text) - Absolutely positioned so it doesn't push the PromptBox down */}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 sm:mb-8 flex flex-row items-center justify-center w-max">
           <img 
             src="/logo-transparent.png" 
             alt="Word World Logo" 
-            className="w-16 h-16 sm:w-20 sm:h-20 object-contain mb-1 sm:mb-2 drop-shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-all" 
+            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105" 
           />
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-linear-to-r from-blue-300 via-cyan-300 to-indigo-300 bg-clip-text text-transparent inline-block drop-shadow-lg whitespace-nowrap">
-            WORD WORLD
-          </h1>
-          <p className="text-blue-100/70 mt-1 text-[11px] min-[375px]:text-xs sm:text-base tracking-wide font-light whitespace-nowrap">
-            Make editing page numbers easier with AI.
-          </p>
-          
-          {/* Checkmark features */}
-          <div className="flex flex-col items-center justify-center gap-2 mt-3 sm:mt-4 text-[11px] sm:text-sm text-blue-100/80 font-medium sm:flex-row sm:gap-5">
-            <div className="flex flex-row items-center justify-center gap-3 sm:gap-5">
-              <span className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
-                Free — no sign-up
-              </span>
-              <span className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
-                Unlimited
-              </span>
-            </div>
-            <span className="flex items-center gap-1.5 sm:gap-2">
-              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-              Documents are never stored
-            </span>
+          <div className={`overflow-hidden transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center ${mounted ? 'max-w-[500px] opacity-100 ml-3 sm:ml-4' : 'max-w-0 opacity-0 ml-0'}`}>
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-white/95 drop-shadow-md whitespace-nowrap">
+              Mari kita bereskan semuanya!
+            </h1>
           </div>
         </div>
 
         {/* Modular Components */}
-        <UploadBox file={file} setFile={handleFileChange} />
         <PromptBox 
+          file={file}
+          setFile={handleFileChange}
           prompt={prompt} 
           setPrompt={setPrompt} 
           onGenerate={handleGenerate} 
