@@ -20,9 +20,7 @@ export default function PromptBox({ file, setFile, prompt, setPrompt, onGenerate
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const placeholders = [
-    "Type your editing command here...",
-    "Start numbering from page 15, position: bottom-right...",
-    "Add roman numerals at the top center of all pages..."
+    "Ketikkan instruksi untuk mulai mengedit..."
   ];
 
   // Reset textarea height when prompt is cleared
@@ -41,7 +39,7 @@ export default function PromptBox({ file, setFile, prompt, setPrompt, onGenerate
       const fullText = placeholders[i];
 
       // Stop permanently if we finished typing the 3rd placeholder
-      if (!isDeleting && placeholderText === fullText && i === 2) {
+      if (!isDeleting && placeholderText === fullText && i === 0) {
         return;
       }
 
@@ -83,7 +81,7 @@ export default function PromptBox({ file, setFile, prompt, setPrompt, onGenerate
   };
 
   return (
-    <div className="glass-panel rounded-[32px] p-2 sm:p-2.5 relative overflow-hidden transition-all duration-500 flex flex-col gap-1.5">
+    <div className="glass-panel rounded-4xl p-2 sm:p-2.5 relative overflow-hidden transition-all duration-500 flex flex-col gap-1.5">
       {/* SVG Filter to convert black background to transparent alpha channel */}
       <svg width="0" height="0" className="absolute pointer-events-none">
         <filter id="remove-black" colorInterpolationFilters="sRGB">
@@ -104,37 +102,60 @@ export default function PromptBox({ file, setFile, prompt, setPrompt, onGenerate
           Your document is ready!
         </p>
       ) : (
-        <div className="relative z-10 flex justify-start">
-          <label className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/25 backdrop-blur-md border border-white/5 cursor-pointer transition-all duration-300 shadow-inner hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:border-cyan-400/40 max-w-xs w-fit group">
-            <input 
-              type="file" 
-              className="hidden" 
-              accept=".docx"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-              {file ? (
-                <div className="flex items-center gap-2 w-full">
-                  <img 
-                    src="/docx-file-format-symbol.svg" 
-                    alt="DOCX Icon" 
-                    className="w-4 h-4 sm:w-5 sm:h-5 opacity-90 shrink-0" 
-                  />
-                  <span className="text-xs sm:text-sm font-medium text-white truncate max-w-[120px] sm:max-w-[150px]">{file.name}</span>
-                  <button 
-                    onClick={(e) => { e.preventDefault(); setFile(null); }}
-                    className="ml-auto text-gray-400 hover:text-white transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-                  </button>
-                </div>
-              ) : (
-              <>
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-                <span className="text-xs sm:text-sm font-medium text-gray-300 whitespace-nowrap">Lampirkan .docx</span>
-              </>
-            )}
+        <div className="relative z-10 w-full">
+          <label className="relative flex items-center justify-center px-2 py-2.5 sm:px-3 sm:py-3 rounded-4xl bg-black/25 backdrop-blur-md border border-white/5 cursor-pointer transition-all duration-300 shadow-inner hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:border-cyan-400/40 w-full group">
+              <input 
+                type="file" 
+                className="hidden" 
+                accept=".docx"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+                {file ? (
+                  <>
+                    <img 
+                      src="/file-alt.svg" 
+                      alt="File Icon" 
+                      className="absolute left-3 sm:left-4 w-9 h-9 sm:w-10 sm:h-10 opacity-90 top-1/2 -translate-y-1/2" 
+                    />
+                    <div className="flex flex-col items-center text-center leading-tight">
+                      <span className="text-xs sm:text-sm font-medium text-cyan-400 truncate max-w-45 sm:max-w-70">{file.name}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-400 mt-1 sm:mt-1.5 font-medium tracking-wide">Klik untuk memilih dokumen lain</span>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); setFile(null); }}
+                      className="absolute right-3 sm:right-4 text-gray-400 hover:text-red-400 transition-colors p-1.5 top-1/2 -translate-y-1/2 bg-white/5 hover:bg-red-500/10 rounded-full"
+                      title="Hapus file"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <svg 
+                      className="absolute left-3 sm:left-4 w-9 h-9 sm:w-10 sm:h-10 opacity-70 top-1/2 -translate-y-1/2 text-white group-hover:text-cyan-400 transition-colors duration-300" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M10 15H14M12 13V17M13 3H8.2C7.0799 3 6.51984 3 6.09202 3.21799C5.71569 3.40973 5.40973 3.71569 5.21799 4.09202C5 4.51984 5 5.0799 5 6.2V17.8C5 18.9201 5 19.4802 5.21799 19.908C5.40973 20.2843 5.71569 20.5903 6.09202 20.782C6.51984 21 7.0799 21 8.2 21H15.8C16.9201 21 17.4802 21 17.908 20.782C18.2843 20.5903 18.5903 20.2843 18.782 19.908C19 19.4802 19 18.9201 19 17.8V9M13 3L19 9M13 3V7.4C13 7.96005 13 8.24008 13.109 8.45399C13.2049 8.64215 13.3578 8.79513 13.546 8.89101C13.7599 9 14.0399 9 14.6 9H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <div className="flex flex-col items-center text-center leading-tight">
+                      <div className="text-xs sm:text-sm font-medium text-gray-300 px-8 sm:px-0">
+                          {/* Mobile Text */}
+                          <span className="sm:hidden text-cyan-400 relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-px after:-bottom-0.5 after:left-0 after:bg-cyan-400 after:origin-center after:transition-transform after:duration-300 group-hover:after:scale-x-100">
+                            Klik untuk mengunggah dokumen
+                          </span>
+                          
+                          {/* Desktop Text */}
+                          <span className="hidden sm:inline">
+                            <span className="text-cyan-400 relative inline-block after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-px after:-bottom-0.5 after:left-0 after:bg-cyan-400 after:origin-center after:transition-transform after:duration-300 group-hover:after:scale-x-100">Klik untuk mengunggah</span>
+                            <span> atau seret & lepaskan</span>
+                          </span>
+                        </div>
+                      <span className="text-[10px] sm:text-xs text-gray-400 mt-1 sm:mt-1.5 font-semibold tracking-wide">.DOCX (Maks 20 MB)</span>
+                    </div>
+                  </>
+                )}
           </label>
         </div>
       )}
@@ -163,7 +184,7 @@ export default function PromptBox({ file, setFile, prompt, setPrompt, onGenerate
         </div>
       ) : (
         /* PROMPT INPUT STATE */
-        <div className="relative z-10 bg-black/25 backdrop-blur-md border border-white/5 rounded-[32px] p-1 sm:p-1.5 flex items-center transition-all duration-300 shadow-inner hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:border-cyan-400/30 focus-within:shadow-[0_0_15px_rgba(34,211,238,0.2)] focus-within:border-cyan-400/30">
+        <div className="relative z-10 bg-black/25 backdrop-blur-md border border-white/5 rounded-4xl p-1 sm:p-1.5 flex items-center transition-all duration-300 shadow-inner hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:border-cyan-400/30 focus-within:shadow-[0_0_15px_rgba(34,211,238,0.2)] focus-within:border-cyan-400/30">
           <textarea
             ref={textareaRef}
             rows={1}

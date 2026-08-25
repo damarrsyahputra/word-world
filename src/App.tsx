@@ -7,12 +7,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [processedBlob, setProcessedBlob] = useState<Blob | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 600);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Auto-hide toast after 7 seconds
   useEffect(() => {
@@ -125,17 +120,15 @@ function App() {
       <div className="relative z-10 max-w-2xl w-full flex flex-col transition-all duration-500 my-auto py-4">
         
         {/* Header (Logo & Text) - Absolutely positioned so it doesn't push the PromptBox down */}
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 sm:mb-8 flex flex-row items-center justify-center w-max">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 sm:mb-8 flex flex-col items-center text-center w-max">
           <img 
             src="/logo-transparent.png" 
             alt="Word World Logo" 
-            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-contain drop-shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105" 
+            className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 object-contain mb-3 sm:mb-4" 
           />
-          <div className={`overflow-hidden transition-all duration-[2500ms] ease-[cubic-bezier(0.16,1,0.3,1)] flex items-center ${mounted ? 'max-w-[500px] opacity-100 ml-3 sm:ml-4' : 'max-w-0 opacity-0 ml-0'}`}>
-            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-white/95 drop-shadow-md whitespace-nowrap">
-              Mari kita bereskan semuanya!
-            </h1>
-          </div>
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-bold tracking-tight text-white/95 drop-shadow-md whitespace-nowrap">
+            Mari kita bereskan semuanya!
+          </h1>
         </div>
 
         {/* Modular Components */}
