@@ -92,7 +92,7 @@ function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-dark-bg flex flex-col items-center p-4 overflow-hidden">
+    <div className="fixed inset-0 bg-dark-bg flex flex-col items-center p-4 overflow-hidden">
       
       {/* Custom Toast Notification */}
       <div 
