@@ -220,7 +220,7 @@ function ChatPromptBox({
           onChange={handleFileChange}
         />
         {pendingFile ? (
-          <div className="flex items-center gap-2 bg-white/5 border border-white/8 rounded-full px-3 h-8 w-fit">
+          <div className="flex items-center gap-2 bg-transparent border border-white/10 rounded-full px-3 h-8 w-fit">
             <img src="/file-alt.svg" alt="file" className="w-4 h-4 opacity-80 shrink-0" />
             <div className="flex-1 min-w-0 max-w-[150px] sm:max-w-[200px]">
               <p className="text-xs font-medium text-white/90 truncate">{pendingFile.name}</p>
@@ -238,7 +238,7 @@ function ChatPromptBox({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/8 rounded-full px-3 h-8 text-xs text-white/80 hover:text-white transition-all w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-transparent hover:bg-white/10 border border-white/10 rounded-full px-3 h-8 text-xs text-white/80 hover:text-white transition-all duration-300 w-fit disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <img src="/file-plus.svg" alt="Attach" className="w-4 h-4 opacity-80" />
             <span className="font-medium font-sans mt-0.5">pilih dokumen lain</span>
@@ -247,8 +247,10 @@ function ChatPromptBox({
       </div>
 
       {/* Input row */}
-      <div className="relative z-10 bg-black/25 backdrop-blur-md border border-white/5 rounded-3xl flex items-center transition-all duration-300 shadow-inner hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:border-cyan-400/30 focus-within:shadow-[0_0_15px_rgba(34,211,238,0.2)] focus-within:border-cyan-400/30 px-1">
-        
+      <div className="relative z-10 bg-black/25 backdrop-blur-md border border-white/5 rounded-3xl flex items-center transition-all duration-300 shadow-inner hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] hover:border-cyan-400/30 focus-within:shadow-[0_0_15px_rgba(34,211,238,0.2)] focus-within:border-cyan-400/30 px-1 overflow-hidden">
+        {/* Top fade mask — softens the hard edge when the textarea grows tall */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-black/40 to-transparent" />
+
         {/* Textarea */}
         <textarea
           ref={textareaRef}

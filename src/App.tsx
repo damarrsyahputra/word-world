@@ -44,21 +44,10 @@ function App() {
 
   // ── Helpers ─────────────────────────────────────────────────────────────
 
-  /** The last user message sent — used as 1-step memory for the backend. */
-  const lastUserPrompt = (): string => {
+  /** Last user prompts (excluding the current in-progress one) for multi-turn memory. */
+  const recentUserPrompts = (n: number): string[] => {
     const userMessages = messages.filter((m) => m.role === 'user');
-    return userMessages.at(-1)?.text ?? '';
-  };
-
-  /** Mark all existing assistant blobs as expired (called before adding new result). */
-  const expirePreviousBlobs = () => {
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.role === 'assistant' && m.downloadBlob
-          ? { ...m, isExpired: true, downloadBlob: undefined }
-          : m
-      )
-    );
+    return userMessages.slice(-n).map((m) => m.text);
   };
 
   // ── Core generate handler ────────────────────────────────────────────────
@@ -106,7 +95,8 @@ function App() {
     }
 
     // ── Add user bubble ───────────────────────────────────────────────────
-    const prev = lastUserPrompt();
+    // Multi-turn memory: send the last 2 prompts (excluding this one) as JSON.
+    const history = recentUserPrompts(2);
     const userMsg: Message = { 
       id: crypto.randomUUID(), 
       role: 'user', 
@@ -117,8 +107,6 @@ function App() {
     setMessages((msgs) => [...msgs, userMsg]);
     setPrompt('');
 
-    // ── Expire old blobs ──────────────────────────────────────────────────
-    expirePreviousBlobs();
     setIsLoading(true);
 
     // ── Call backend ──────────────────────────────────────────────────────
@@ -126,7 +114,7 @@ function App() {
       const formData = new FormData();
       formData.append('file', fileToSend);
       formData.append('prompt', trimmedPrompt);
-      formData.append('previous_prompt', prev);
+      formData.append('previous_prompts', JSON.stringify(history));
 
       const response = await fetch(API_URL, { method: 'POST', body: formData });
 
@@ -141,11 +129,14 @@ function App() {
 
       const blob = await response.blob();
       const summary = response.headers.get('X-Word-World-Summary') ?? 'Dokumen berhasil diproses.';
-      const parts = currentFileName.split('.');
+      const sourceName = fileToSend.name || currentFileName;
+      const parts = sourceName.split('.');
       const ext = parts.length > 1 ? parts.pop() : 'docx';
       const base = parts.join('.');
-      const editedName = `${base}-edited.${ext}`;
+      const editedName = `${base} - edited.${ext}`;
 
+      // ── Success: only now expire older blobs (keeps prior result usable
+      // if this prompt failed / was unrecognized).
       setCurrentDocBlob(blob);
 
       const assistantMsg: Message = {
@@ -155,7 +146,14 @@ function App() {
         downloadBlob: blob,
         fileName: editedName,
       };
-      setMessages((msgs) => [...msgs, assistantMsg]);
+      setMessages((msgs) => [
+        ...msgs.map((m) =>
+          m.role === 'assistant' && m.downloadBlob
+            ? { ...m, isExpired: true, downloadBlob: undefined }
+            : m
+        ),
+        assistantMsg,
+      ]);
     } catch (err) {
       const errMsg: Message = {
         id: crypto.randomUUID(),
@@ -245,7 +243,7 @@ function App() {
 
         {/* Compact input bar — fixed at bottom */}
         <div
-          className={`relative z-20 p-3 sm:p-4 flex justify-center transition-all duration-500 ${
+          className={`relative z-20 p-3 sm:p-2 flex justify-center transition-all duration-500 ${
             hasStarted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
           }`}
         >

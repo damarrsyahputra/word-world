@@ -21,7 +21,7 @@ function DocumentCard({ msg }: { msg: Message }) {
     const url = URL.createObjectURL(msg.downloadBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = msg.fileName ?? 'edited_document.docx';
+    a.download = msg.fileName ?? 'document - edited.docx';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -32,7 +32,7 @@ function DocumentCard({ msg }: { msg: Message }) {
 
   return (
     <div
-      className={`mt-2 flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-all ${
+      className={`mt-2 w-3/4 min-w-[16rem] flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-all ${
         expired
           ? 'bg-white/3 border-white/5 opacity-50'
           : 'bg-white/5 border-white/10'
@@ -46,7 +46,7 @@ function DocumentCard({ msg }: { msg: Message }) {
       {/* File info */}
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-white/80 truncate">
-          {msg.fileName ?? 'edited_document.docx'}
+          {msg.fileName ?? 'document - edited.docx'}
         </p>
         <p className="text-[10px] text-white/35 mt-0.5">
           {expired ? 'Dokumen sudah kedaluwarsa' : 'Dokumen · DOCX'}
@@ -78,7 +78,14 @@ export default function ChatView({ messages, isLoading }: ChatViewProps) {
   }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <div 
+      className="relative flex-1 overflow-hidden"
+      style={{
+        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) calc(100% - 60px), rgba(0,0,0,0) 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) calc(100% - 60px), rgba(0,0,0,0) 100%)'
+      }}
+    >
+      <div className="h-full overflow-y-auto px-4 py-6 pb-12 space-y-6 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {messages.map((msg) => (
         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start items-start gap-3'}`}>
           {/* Assistant logo (static) */}
@@ -91,27 +98,35 @@ export default function ChatView({ messages, isLoading }: ChatViewProps) {
           )}
 
           {/* Bubble content */}
-          <div className={`max-w-[80%] ${msg.role === 'user' ? 'max-w-[70%]' : ''}`}>
+          <div
+            className={
+              msg.role === 'user'
+                ? 'max-w-[70%]'
+                : (msg.downloadBlob || msg.isExpired) && msg.fileName
+                  ? 'w-full'
+                  : 'max-w-[80%]'
+            }
+          >
             {msg.role === 'user' ? (
               /* User bubble — pill shape, right-aligned */
               <div className="flex flex-col items-end gap-2">
                 {msg.attachedFileName && (
-                  <div className="bg-white/10 rounded-3xl w-30 h-30 flex flex-col items-center justify-center p-3 border border-white/10 shadow-sm">
+                  <div className="glass-bubble rounded-3xl w-36 h-36 flex flex-col items-center justify-center p-3">
                     {/* file-alt Icon */}
-                    <img src="/file-alt.svg" alt="doc" className="w-20 h-20 opacity-80" />
+                    <img src="/file-alt.svg" alt="doc" className="w-20 h-20 opacity-80 mb-4 mt-2" />
                     <span className="text-xs text-white/90 font-medium truncate w-full text-center inline-block">
                       {msg.attachedFileName}
                     </span>
                   </div>
                 )}
-                <div className="bg-white/10 border border-white/10 text-white/90 text-sm px-4 py-2.5 rounded-3xl rounded-br-md leading-relaxed">
+                <div className="glass-bubble text-white/90 text-sm px-4 py-2.5 rounded-3xl rounded-br-md leading-relaxed">
                   {msg.text}
                 </div>
               </div>
             ) : (
               /* Assistant bubble — left-aligned, plain text + optional doc card */
               <div>
-                <p className="text-white/85 text-sm leading-relaxed">{msg.text}</p>
+                <p className="text-white/85 text-sm leading-relaxed max-w-[80%]">{msg.text}</p>
                 {(msg.downloadBlob || msg.isExpired) && msg.fileName && (
                   <DocumentCard msg={msg} />
                 )}
@@ -136,7 +151,8 @@ export default function ChatView({ messages, isLoading }: ChatViewProps) {
       )}
 
       {/* Invisible anchor to scroll to */}
-      <div ref={bottomRef} />
+      <div ref={bottomRef} className="h-12" />
+      </div>
     </div>
   );
 }
