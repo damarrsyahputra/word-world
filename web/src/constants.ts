@@ -1,5 +1,5 @@
 export const API_URL =
-  import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api/v1/process-document';
+  import.meta.env.VITE_API_URL ?? 'https://word-world-api.vercel.app/api/v1/process-document';
 
 export const MAX_FILE_SIZE_MB = 20;
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
