@@ -1,25 +1,61 @@
 # Word World
 
-An AI Agent for formatting and manipulating Microsoft Word (.docx) page numbers using natural language commands.
-
-## Overview
-
-Word World allows users to control document pagination without navigating complex software menus. By providing a natural language instruction, the tool automatically parses the intent and restructures the underlying XML of the .docx file to apply the correct page fields, section breaks, and alignments.
+An AI-powered document assistant for automating Microsoft Word (.docx) page numbering. Type instructions in natural language and the AI parses your intent, restructuring the document XML to apply the correct page fields, section breaks, and numbering.
 
 ## Features
 
-- **Natural Language Parsing**: Translates plain English or Indonesian instructions (e.g., *"Add roman numerals at the bottom center of Chapter 1"*) into document structural changes.
-- **Advanced Page Numbering & Sectioning**: Automatically manages complex document sections and Microsoft Word page fields, enabling independent numbering formats and positions for specific chapters.
-- **Privacy First**: Documents are processed in-memory and immediately returned to the user. No files are stored or persisted.
-- **Zero Configuration**: A single-viewport, glassmorphism interface designed for a fast drag-and-drop workflow.
-
-## Models Used
-
-Word World's natural language command parsing is powered by highly efficient LLMs, utilizing:
-- **Llama 3.1 (8B)** via Groq API for blazing-fast inference.
+- **Natural Language Instructions** — e.g. "Add Roman page numbers from the beginning to the table of contents"
+- **Advanced Page Numbering** — per-chapter formats, positions, and first-page exclusions
+- **Smart Section Isolation** — automatic chapter boundary detection without breaking document layout
+- **Zero-Loss Formatting** — targeted XML manipulation, document styles stay intact
+- **Conversational Memory** — follow-up corrections work because previous prompts are passed to the model
+- **Live Preview** — results render via Microsoft Office Web Viewer
 
 ## Tech Stack
 
-- React (TypeScript)
-- Tailwind CSS
-- Vite
+- **Backend**: FastAPI, python-docx, LangChain + Groq, Supabase Storage
+- **Frontend**: React (TypeScript), Tailwind CSS, Vite
+
+## Requirements
+
+- Python 3.11+
+- Node.js 18+
+- Groq API key
+- Optional: a Supabase project with a public `previews` bucket for the preview feature
+
+## Getting Started
+
+### 1. Backend
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Copy `.env.example` to `.env` and fill in your keys:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+ALLOWED_ORIGINS=http://localhost:5173
+```
+
+Run the API:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+### 2. Frontend
+
+```powershell
+cd web
+npm install
+npm run dev
+```
+
+### Testing
+
+```powershell
+pytest -v
+```

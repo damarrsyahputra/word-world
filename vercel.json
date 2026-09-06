@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api.py"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/v1/preview/purge",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
