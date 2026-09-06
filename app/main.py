@@ -34,7 +34,7 @@ app = FastAPI(
 
 # Restrict CORS to trusted origins. Override with ALLOWED_ORIGINS (comma-separated)
 # for local development, e.g. http://localhost:5173.
-_default_origins = ["https://word-world-web.vercel.app"]
+_default_origins = ["https://intowordworld.vercel.app"]
 _allowed_origins = [
     o.strip()
     for o in os.environ.get("ALLOWED_ORIGINS", ",".join(_default_origins)).split(",")
