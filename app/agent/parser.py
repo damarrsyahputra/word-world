@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from difflib import SequenceMatcher
+
 from app.agent.chapters import parse_chapter_token
 from app.agent.prompts import COMMAND_SYSTEM_PROMPT
 from app.agent.schemas import DocumentCommand, FirstPageSettings, PageNumberRange, SectionPageSettings
@@ -172,11 +174,30 @@ def _has_page_number_intent(request: str) -> bool:
     return any(keyword in normalized for keyword in _PAGE_INTENT_KEYWORDS)
 
 
+_CLEAR_VERBS = ("hapus", "hilangkan", "remove", "delete", "clear", "bersihkan", "buang")
+_CLEAR_NUMBER_MARKERS = (
+    "nomor halaman", "nomor page", "no halaman", "page number", "page-number",
+    "penomoran", "halaman numeral",
+)
+
+
 def _is_clear_request(request: str) -> bool:
     normalized = " ".join(request.casefold().split())
-    return any(
+    if any(
         phrase in normalized
         for phrase in ("hapus semua nomor halaman", "hapus nomor halaman", "hapus page number", "clear all page numbers")
+    ):
+        return True
+    # Typo-tolerant detection (e.g. "hapur seluruh nomor halaman") so common
+    # misspellings of "hapus"/"hilangkan"/... still route to the clear path
+    # instead of being handed to the LLM, which tends to hallucinate a command.
+    has_number_marker = any(marker in normalized for marker in _CLEAR_NUMBER_MARKERS)
+    if not has_number_marker:
+        return False
+    return any(
+        SequenceMatcher(None, token, verb).ratio() >= 0.8
+        for token in normalized.split()
+        for verb in _CLEAR_VERBS
     )
 
 

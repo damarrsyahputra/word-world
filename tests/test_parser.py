@@ -54,6 +54,18 @@ def test_is_clear_request_detects_hapus():
     assert _is_clear_request("hapus semua nomor halaman")
 
 
+def test_is_clear_request_detects_hapus_typo():
+    assert _is_clear_request("hapur seluruh nomor halaman")
+
+
+def test_is_clear_request_detects_hilangkan():
+    assert _is_clear_request("hilangkan seluruh nomor halaman")
+
+
+def test_is_clear_request_rejects_unrelated_hapus_typo():
+    assert not _is_clear_request("hapur seluruh meja")
+
+
 def test_is_clear_request_rejects_add():
     assert not _is_clear_request("tambahkan nomor halaman")
 

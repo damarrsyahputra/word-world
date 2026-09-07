@@ -194,7 +194,7 @@ def _get_anchor_candidates(paragraphs, anchor: str):
     4. Partial substring match in headings (heading preferred).
     5. Fuzzy SequenceMatcher fallback (≥ 0.55).
     """
-    normalized_anchor = _normalize_anchor(anchor)
+    normalized_anchor, aliases = _normalize_anchor_variants(anchor)
 
     # Reject junk anchors from misbehaving LLMs (e.g. "paragraph_index=1").
     if re.fullmatch(r"paragraph_index\s*=\s*\d+", normalized_anchor):
@@ -220,16 +220,18 @@ def _get_anchor_candidates(paragraphs, anchor: str):
             if chapter_matches:
                 return chapter_matches
 
+    variants = (normalized_anchor, *aliases)
+
     # ── 2. Heading starts-with match (anchor is a keyword inside a heading) ──
-    # e.g. anchor="pendahuluan" → matches "BAB I PENDAHULUAN" (heading)
     heading_startswith = [
         paragraph
         for paragraph in paragraphs
         if "heading" in paragraph.style.casefold()
-        and (
-            _normalize_anchor(paragraph.text).startswith(normalized_anchor)
-            or _normalize_anchor(paragraph.text).endswith(normalized_anchor)
-            or normalized_anchor in _normalize_anchor(paragraph.text).split()
+        and any(
+            _normalize_anchor(paragraph.text).startswith(variant)
+            or _normalize_anchor(paragraph.text).endswith(variant)
+            or variant in _normalize_anchor(paragraph.text).split()
+            for variant in variants
         )
     ]
     # Deduplicate: if all matches resolve to the same section, return them
@@ -239,10 +241,23 @@ def _get_anchor_candidates(paragraphs, anchor: str):
             return heading_startswith
 
     # ── 3. Exact full-text match ──
-    exact_matches = [
+    # Prefer the exact, un-aliased text first: when a document contains both
+    # "ABSTRAK" and "ABSTRACT", anchor "abstract" must hit the English heading,
+    # not become ambiguous by also matching the Indonesian one.
+    primary_exact = [
         paragraph
         for paragraph in paragraphs
         if _normalize_anchor(paragraph.text) == normalized_anchor
+    ]
+    heading_primary_exact = [p for p in primary_exact if "heading" in p.style.casefold()]
+    if heading_primary_exact:
+        return heading_primary_exact
+    if primary_exact:
+        return primary_exact
+    exact_matches = [
+        paragraph
+        for paragraph in paragraphs
+        if any(_normalize_anchor(paragraph.text) == variant for variant in variants)
     ]
     heading_exact = [p for p in exact_matches if "heading" in p.style.casefold()]
     if heading_exact:
@@ -255,7 +270,7 @@ def _get_anchor_candidates(paragraphs, anchor: str):
         paragraph
         for paragraph in paragraphs
         if "heading" in paragraph.style.casefold()
-        and normalized_anchor in _normalize_anchor(paragraph.text)
+        and any(variant in _normalize_anchor(paragraph.text) for variant in variants)
     ]
     if partial_heading:
         sections_hit = {p.section_index for p in partial_heading}
@@ -266,7 +281,7 @@ def _get_anchor_candidates(paragraphs, anchor: str):
     partial_all = [
         paragraph
         for paragraph in paragraphs
-        if normalized_anchor in _normalize_anchor(paragraph.text)
+        if any(variant in _normalize_anchor(paragraph.text) for variant in variants)
     ]
     if partial_all:
         return partial_all
@@ -275,7 +290,10 @@ def _get_anchor_candidates(paragraphs, anchor: str):
     scored = sorted(
         [
             (
-                SequenceMatcher(None, normalized_anchor, _normalize_anchor(paragraph.text)).ratio(),
+                max(
+                    SequenceMatcher(None, variant, _normalize_anchor(paragraph.text)).ratio()
+                    for variant in variants
+                ),
                 paragraph,
             )
             for paragraph in paragraphs
@@ -487,5 +505,25 @@ def _normalize_anchor(value: str) -> str:
     return " ".join(value.casefold().replace("_", " ").replace("-", " ").split())
 
 
+# Cross-language anchor aliases so English spellings of common thesis sections
+# resolve to their Indonesian heading in the document (and vice versa).
+_ANCHOR_ALIASES = {
+    "abstract": ("abstrak",),
+    "abstrak": ("abstract",),
+}
+
+
+def _normalize_anchor_variants(value: str) -> tuple[str, tuple[str, ...]]:
+    """Return (normalized_anchor, aliases) for fuzzy/partial matching.
+
+    Useful when users reference "abstract" while the document heading says
+    "ABSTRAK" (or the reverse), which previously fell through to a fuzzy match
+    against body text and could land on the wrong chapter.
+    """
+    normalized = _normalize_anchor(value)
+    return normalized, _ANCHOR_ALIASES.get(normalized, ())
+
+
 def export_document(document) -> bytes:
     return to_bytes(document)
+

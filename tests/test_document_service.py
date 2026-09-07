@@ -66,6 +66,41 @@ def test_get_anchor_candidates_heading_startswith():
     assert [p.index for p in candidates] == [1]
 
 
+def test_get_anchor_candidates_abstract_matches_abstrak_heading():
+    # User says "abstract" (English) but the document heading is "ABSTRAK".
+    paragraphs = [
+        _para(0, "Lembar Pengesahan", "Heading 1"),
+        _para(1, "ABSTRAK", "Heading 1"),
+        _para(2, "The abstract is a summary of the thesis.", "Normal"),
+        _para(3, "BAB I PENDAHULUAN", "Heading 1"),
+    ]
+    candidates = _get_anchor_candidates(paragraphs, "abstract")
+    assert [p.index for p in candidates] == [1]
+
+
+def test_get_anchor_candidates_abstrak_matches_abstract_heading():
+    # Document heading is the English "ABSTRACT", user typed "abstrak".
+    paragraphs = [
+        _para(0, "ABSTRACT", "Heading 1"),
+        _para(1, "BAB I PENDAHULUAN", "Heading 1"),
+    ]
+    candidates = _get_anchor_candidates(paragraphs, "abstrak")
+    assert [p.index for p in candidates] == [0]
+
+
+def test_get_anchor_candidates_both_headings_disambiguates_exact():
+    # A real thesis contains BOTH "ABSTRAK" and "ABSTRACT". The literal anchor
+    # must win over the alias so it is never reported as ambiguous.
+    paragraphs = [
+        _para(0, "LEMBAR PENGESAHAN", "Heading 1", 0),
+        _para(1, "ABSTRAK", "Heading 1", 1),
+        _para(2, "ABSTRACT", "Heading 1", 2),
+        _para(3, "BAB I PENDAHULUAN", "Heading 1", 3),
+    ]
+    assert [p.index for p in _get_anchor_candidates(paragraphs, "abstract")] == [2]
+    assert [p.index for p in _get_anchor_candidates(paragraphs, "abstrak")] == [1]
+
+
 def test_get_anchor_candidates_exact_match():
     paragraphs = _thesis_paragraphs()
     candidates = _get_anchor_candidates(paragraphs, "daftar pustaka")
