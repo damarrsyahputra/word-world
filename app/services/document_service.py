@@ -105,19 +105,50 @@ def _find_next_isolation_index(document, paragraphs, end_idx: int) -> int | None
                 if i_ilvl == ilvl_val:
                     return i
 
-    # 5. Standard thesis major boundaries
+    # 5. Front-matter end anchors (e.g. "abstract"): the boundary is whichever
+    # comes first — the next standard thesis heading OR the next chapter heading.
+    # Previously only standard headings were searched, so when front matter and
+    # chapters live in one giant section (no section breaks), the search skipped
+    # straight past BAB I-V to DAFTAR PUSTAKA.
     standard_headings = {
         "daftar pustaka", "daftar isi", "daftar gambar", "daftar tabel", 
         "daftar lampiran", "kata pengantar", "lembar pengesahan", "lampiran", "abstrak", "abstract",
         "riwayat hidup", "daftar singkatan"
     }
-    for i in range(end_idx + 1, len(paragraphs)):
-        real_p = document.paragraphs[i]
-        if not _is_main_body(real_p): continue
-        p_text = _normalize_anchor(paragraphs[i].text)
-        if p_text in standard_headings or (len(p_text.split()) < 10 and any(p_text.startswith(h) for h in standard_headings)):
-            return i
-            
+    if current_num is None:
+        next_standard: int | None = None
+        next_chapter: int | None = None
+        for i in range(end_idx + 1, len(paragraphs)):
+            real_p = document.paragraphs[i]
+            if not _is_main_body(real_p):
+                continue
+            p_text = _normalize_anchor(paragraphs[i].text)
+            if next_standard is None and (
+                p_text in standard_headings
+                or (len(p_text.split()) < 10 and any(p_text.startswith(h) for h in standard_headings))
+            ):
+                next_standard = i
+            if next_chapter is None and (
+                "heading" in paragraphs[i].style.casefold()
+                and chapter_number_from_text(p_text) is not None
+            ):
+                next_chapter = i
+            if next_standard is not None and next_chapter is not None:
+                break
+        candidates = [c for c in (next_standard, next_chapter) if c is not None]
+        if candidates:
+            return min(candidates)
+
+    if current_num is not None:
+        # Fallback for chapter end-anchors: next standard thesis heading.
+        for i in range(end_idx + 1, len(paragraphs)):
+            real_p = document.paragraphs[i]
+            if not _is_main_body(real_p):
+                continue
+            p_text = _normalize_anchor(paragraphs[i].text)
+            if p_text in standard_headings or (len(p_text.split()) < 10 and any(p_text.startswith(h) for h in standard_headings)):
+                return i
+
     return None
 
 
@@ -491,6 +522,9 @@ def apply_command(document, command: DocumentCommand) -> None:
 
 
 def _find_anchor_section(paragraphs, anchor: str) -> int:
+    normalized_anchor = _normalize_anchor(anchor)
+    if normalized_anchor in {"awal", "awal dokumen", "pertama"}:
+        return 0
     candidates = _get_anchor_candidates(paragraphs, anchor)
     if not candidates:
         raise ValueError(f"Could not find section anchor: {anchor}")

@@ -4,11 +4,12 @@ import pytest
 
 from docx import Document
 
-from app.document.reader import ParagraphInfo
+from app.document.reader import ParagraphInfo, list_paragraphs
 from app.document.editor import add_page_numbers
 from app.services.document_service import (
     _extract_section_settings,
     _find_anchor_paragraph_index,
+    _find_next_isolation_index,
     _get_anchor_candidates,
     _normalize_anchor,
 )
@@ -128,6 +129,50 @@ def test_find_anchor_paragraph_index_prefers_heading():
 def test_find_anchor_paragraph_index_start_of_document():
     paragraphs = _thesis_paragraphs()
     assert _find_anchor_paragraph_index(paragraphs, "awal") == 0
+
+
+# ── Isolation BOUNDARY after front-matter anchors ─────────────────────
+
+
+def _build_one_giant_section_doc():
+    """Front matter + chapters share a single empty-section document (the exact
+    failure mode of a thesis without section breaks between front matter and body)."""
+    document = Document()
+    order = [
+        ("Lembar Pengesahan", "Normal"),
+        ("ABSTRAK", "Normal"),
+        ("ABSTRACT", "Normal"),
+        ("BAB I\nPENDAHULUAN", "Heading 1"),
+        ("BAB II\nTINJAUAN PUSTAKA", "Heading 1"),
+        ("DAFTAR PUSTAKA", "Heading 1"),
+    ]
+    for text, style in order:
+        p = document.add_paragraph(text)
+        p.style = document.styles[style]
+    return document
+
+
+def test_isolation_finds_bab_1_after_abstract():
+    document = _build_one_giant_section_doc()
+    paragraphs = list_paragraphs(document, include_empty=True)
+    abstract_idx = _find_anchor_paragraph_index(paragraphs, "abstract")
+    next_idx = _find_next_isolation_index(document, paragraphs, abstract_idx)
+    assert paragraphs[next_idx].text == "BAB I\nPENDAHULUAN"
+
+
+def test_isolation_falls_back_to_standard_heading_when_no_bab():
+    document = Document()
+    for text, style in [
+        ("ABSTRACT", "Normal"),
+        ("KATA PENGANTAR", "Heading 1"),
+        ("DAFTAR PUSTAKA", "Heading 1"),
+    ]:
+        p = document.add_paragraph(text)
+        p.style = document.styles[style]
+    paragraphs = list_paragraphs(document, include_empty=True)
+    abstract_idx = _find_anchor_paragraph_index(paragraphs, "abstract")
+    next_idx = _find_next_isolation_index(document, paragraphs, abstract_idx)
+    assert paragraphs[next_idx].text == "KATA PENGANTAR"
 
 
 # ── Section-settings reader (hoisted from apply_command) ────────────

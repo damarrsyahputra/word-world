@@ -51,7 +51,7 @@ def create_command_parser(model):
             return DocumentCommand(action="clear_all_page_numbers")
 
         # Try deterministic rule-based parse first (avoids small-model hallucinations).
-        rule_based = _try_parse_add_range_request(user_request, document_context)
+        rule_based = _try_parse_multi_command(user_request, document_context)
         if rule_based is not None:
             return rule_based
 
@@ -361,6 +361,37 @@ _BAB_IN_ANCHOR = re.compile(
 def _to_chapter_int(token: str) -> int | None:
     """Convert an Arabic or Roman numeral chapter token to int (or None)."""
     return parse_chapter_token(token)
+
+
+_MULTI_COMMAND_CONNECTORS = re.compile(
+    r"\s*(?:,\s*)?(?:kemudian|lalu|setelah itu|terus|lantas)\s+",
+    re.IGNORECASE,
+)
+
+
+def _split_multi_command(user_request: str) -> list[str]:
+    """Split a request like '... kanan, kemudian tambahkan ...' into sub-requests."""
+    return [part for part in _MULTI_COMMAND_CONNECTORS.split(user_request) if part.strip()]
+
+
+def _try_parse_multi_command(user_request: str, document_context: str) -> DocumentCommand | None:
+    """Deterministically parse a multi-step add request (e.g. 'romawi ..., kemudian decimal ...').
+
+    Returns a single ``DocumentCommand`` with the merged ranges from every step,
+    or ``None`` when any step cannot be parsed by the rule-based parser.
+    """
+    parts = _split_multi_command(user_request)
+    if len(parts) == 1:
+        return _try_parse_add_range_request(user_request, document_context)
+
+    commands = []
+    for part in parts:
+        sub = _try_parse_add_range_request(part, document_context)
+        if sub is None or sub.action != "configure_page_number_ranges":
+            return None
+        commands.append(sub)
+    ranges = [page_range for command in commands for page_range in command.ranges]
+    return DocumentCommand(action="configure_page_number_ranges", ranges=ranges)
 
 
 def _try_parse_add_range_request(user_request: str, document_context: str) -> DocumentCommand | None:
